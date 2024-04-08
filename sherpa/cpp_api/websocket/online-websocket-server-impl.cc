@@ -197,6 +197,7 @@ void OnlineWebsocketDecoder::Decode() {
 
   for (auto c : c_vec) {
     auto result = recognizer_->GetResult(c->s.get());
+    SHERPA_LOG(INFO) << "result: " << result.AsJsonString() << "\n";
 
     asio::post(server_->GetConnectionContext(),
                [this, hdl = c->hdl, json = result.AsJsonString()]() {

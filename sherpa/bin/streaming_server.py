@@ -98,6 +98,8 @@ import websockets
 
 import sherpa
 
+from funasr import AutoModel
+
 
 def add_model_args(parser: argparse.ArgumentParser):
     parser.add_argument(
@@ -394,6 +396,11 @@ def get_args():
 
     return parser.parse_args()
 
+def create_funasr_model() -> AutoModel:
+    model = AutoModel(model="ct-punc")
+    res = model.generate(input="那今天的会就到这里吧 happy new year 明年见")
+    print(res)
+    return model
 
 def create_recognizer(args) -> sherpa.OnlineRecognizer:
     feat_config = sherpa.FeatureConfig()
@@ -428,8 +435,8 @@ def create_recognizer(args) -> sherpa.OnlineRecognizer:
         tokens=args.tokens,
         use_gpu=args.use_gpu,
         num_active_paths=args.num_active_paths,
-        use_bbpe=args.use_bbpe,
-        temperature=args.temperature,
+        #use_bbpe=args.use_bbpe,
+        #temperature=args.temperature,
         feat_config=feat_config,
         decoding_method=args.decoding_method,
         fast_beam_search_config=fast_beam_search_config,
@@ -450,6 +457,7 @@ class StreamingServer(object):
     def __init__(
         self,
         recognizer: sherpa.OnlineRecognizer,
+        funasr_model: AutoModel,
         nn_pool_size: int,
         max_wait_ms: float,
         max_batch_size: int,
@@ -492,6 +500,7 @@ class StreamingServer(object):
             it (the default generated filename is `cert.pem`).
         """
         self.recognizer = recognizer
+        self.funasr_model = funasr_model
 
         self.certificate = certificate
         self.http_server = sherpa.HttpServer(doc_root)
@@ -669,6 +678,9 @@ class StreamingServer(object):
         )
 
         stream = self.recognizer.create_stream()
+        last_result = None
+        last_punc_str = ""
+        last_punc_size = 0
 
         while True:
             samples = await self.recv_audio_samples(socket)
@@ -684,18 +696,50 @@ class StreamingServer(object):
             while self.recognizer.is_ready(stream):
                 await self.compute_and_decode(stream)
                 result = self.recognizer.get_result(stream)
+                if last_result is not None:
+                    if result.segment > last_result.segment and len(last_result.text) > 0:
+                        last_punc_str = ""
+                        last_punc_size = 0
+                        text_str = last_result.text.lower()
+                        punc_result = self.funasr_model.generate(input=text_str)
+                        text_str = punc_result[0]["text"]
+                        message = {
+                            "method": self.decoding_method,
+                            "segment": last_result.segment,
+                            "text": text_str,
+                            "tokens": last_result.tokens,
+                            "timestamps": format_timestamps(last_result.timestamps),
+                            "is_final": last_result.is_final,
+                        }
+                        # print(message)
+                        logging.info(f"message: {message}.")
+                        await socket.send(json.dumps(message))
 
-                message = {
-                    "method": self.decoding_method,
-                    "segment": result.segment,
-                    "text": result.text,
-                    "tokens": result.tokens,
-                    "timestamps": format_timestamps(result.timestamps),
-                    "final": result.is_final,
-                }
-                print(message)
+                last_result = result
+                if len(result.text) > 0:
+                    text_str = result.text.lower()
+                    msg_str = ""
+                    if len(result.tokens) % 6 == 0:
+                        punc_result = self.funasr_model.generate(input=text_str)
+                        #print(punc_result)
+                        last_punc_str = punc_result[0]["text"]
+                        msg_str = last_punc_str
+                        last_punc_size = len(text_str)
+                    else:
+                        msg_str = last_punc_str + text_str[last_punc_size:]
 
-                await socket.send(json.dumps(message))
+                    message = {
+                        "method": self.decoding_method,
+                        "segment": result.segment,
+                        "text": msg_str,
+                        "tokens": result.tokens,
+                        "timestamps": format_timestamps(result.timestamps),
+                        "is_final": result.is_final,
+                    }
+                    #print(message)
+                    logging.info(f"message: {message}.")
+
+                    await socket.send(json.dumps(message))
 
         tail_padding = torch.rand(
             int(self.sample_rate * self.tail_padding_length), dtype=torch.float32
@@ -811,6 +855,8 @@ def main():
     torch.set_num_threads(args.num_threads)
     torch.set_num_interop_threads(args.num_threads)
     recognizer = create_recognizer(args)
+    funasr_model = create_funasr_model()
+    logging.info("create funasr success")
 
     port = args.port
     nn_pool_size = args.nn_pool_size
@@ -831,6 +877,7 @@ def main():
 
     server = StreamingServer(
         recognizer=recognizer,
+        funasr_model=funasr_model,
         nn_pool_size=nn_pool_size,
         max_batch_size=max_batch_size,
         max_wait_ms=max_wait_ms,

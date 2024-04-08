@@ -103,7 +103,7 @@ class Client {
         [this](connection_hdl /*hdl*/) { SHERPA_LOG(INFO) << "Disconnected"; });
     c_.set_message_handler(
         [this](connection_hdl hdl, message_ptr msg) { OnMessage(hdl, msg); });
-
+    received_first_word = false;
     Run();
   }
 
@@ -171,15 +171,22 @@ class Client {
 
   void OnOpen(connection_hdl hdl) {
     auto start_time = std::chrono::steady_clock::now();
+    sleep(1);
     asio::post(
         io_, [this, hdl, start_time]() { this->SendMessage(hdl, start_time); });
   }
 
   void OnMessage(connection_hdl hdl, message_ptr msg) {
     const std::string &payload = msg->get_payload();
+    SHERPA_LOG(INFO) << payload;
     auto result = json::parse(payload);
     std::string res = result.dump();
-    SHERPA_LOG(INFO) << res;
+    if (!received_first_word && !result["text"].get<std::string>().empty()) {
+      received_first_word = true;
+      SHERPA_LOG(INFO) << res << "received first word";
+    } else {
+      SHERPA_LOG(INFO) << res;
+    }
     if (result["segment"] > segment_id_) {
       segment_id_ = result["segment"];
       std::cout << text_;
@@ -284,6 +291,7 @@ class Client {
   std::string wave_filename_;
   std::string ctm_filename_;
   std::ofstream of_;
+  bool received_first_word;
 };
 
 int32_t main(int32_t argc, char *argv[]) {

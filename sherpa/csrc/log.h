@@ -22,6 +22,7 @@
 #define SHERPA_CSRC_LOG_H_
 
 #include <stdio.h>
+#include <iostream>
 
 #include <mutex>  // NOLINT
 #include <sstream>
@@ -171,8 +172,9 @@ class Logger {
     }
 
     if (cur_level_ <= level_) {
-      fprintf(stderr, "%s:%u:%s %s ", filename, line_num, func_name,
-              GetDateTimeStr().c_str());
+      //fprintf(stderr, "%s:%u:%s %s ", filename, line_num, func_name,
+      //        GetDateTimeStr().c_str());
+      std::cout << filename << ":" << line_num << ":" << func_name << " " << GetDateTimeStr();
     }
   }
 
@@ -190,7 +192,8 @@ class Logger {
 
       https://github.com/k2-fsa/sherpa/issues/new
     )";
-    fprintf(stderr, "\n");
+    //ifprintf(stderr, "\n");
+    std::cout << std::endl;
     if (level_ == FATAL) {
       std::string stack_trace = GetStackTrace();
       if (!stack_trace.empty()) {
@@ -211,50 +214,59 @@ class Logger {
 
   const Logger &operator<<(bool b) const {
     if (cur_level_ <= level_) {
-      fprintf(stderr, b ? "true" : "false");
+      //fprintf(stderr, b ? "true" : "false");
+      std::cout << b;
     }
     return *this;
   }
 
   const Logger &operator<<(int8_t i) const {
-    if (cur_level_ <= level_) fprintf(stderr, "%d", i);
+    //if (cur_level_ <= level_) fprintf(stderr, "%d", i);
+    std::cout << i;
     return *this;
   }
 
   const Logger &operator<<(const char *s) const {
-    if (cur_level_ <= level_) fprintf(stderr, "%s", s);
-    return *this;
+//    if (cur_level_ <= level_) fprintf(stderr, "%s", s);
+    std::cout << s;
+	  return *this;
   }
 
   const Logger &operator<<(int32_t i) const {
-    if (cur_level_ <= level_) fprintf(stderr, "%d", i);
+//    if (cur_level_ <= level_) fprintf(stderr, "%d", i);
+    std::cout << i;
     return *this;
   }
 
   const Logger &operator<<(uint32_t i) const {
-    if (cur_level_ <= level_) fprintf(stderr, "%u", i);
-    return *this;
+//    if (cur_level_ <= level_) fprintf(stderr, "%u", i);
+      std::cout << i;
+      return *this;
   }
 
   const Logger &operator<<(uint64_t i) const {
     if (cur_level_ <= level_)
-      fprintf(stderr, "%llu", (long long unsigned int)i);  // NOLINT
+      std::cout << i;
+      //fprintf(stderr, "%llu", (long long unsigned int)i);  // NOLINT
     return *this;
   }
 
   const Logger &operator<<(int64_t i) const {
     if (cur_level_ <= level_)
-      fprintf(stderr, "%lli", (long long int)i);  // NOLINT
+      std::cout << i;
+      //fprintf(stderr, "%lli", (long long int)i);  // NOLINT
     return *this;
   }
 
   const Logger &operator<<(float f) const {
-    if (cur_level_ <= level_) fprintf(stderr, "%f", f);
+//    if (cur_level_ <= level_) fprintf(stderr, "%f", f);
+    std::cout << f;
     return *this;
   }
 
   const Logger &operator<<(double d) const {
-    if (cur_level_ <= level_) fprintf(stderr, "%f", d);
+//    if (cur_level_ <= level_) fprintf(stderr, "%f", d);
+    std::cout << d;
     return *this;
   }
 
@@ -263,12 +275,14 @@ class Logger {
     // require T overloads operator<<
     std::ostringstream os;
     os << t;
-    return *this << os.str().c_str();
+    std::cout << os.str();
+    return *this;
   }
 
   // specialization to fix compile error: `stringstream << nullptr` is ambiguous
   const Logger &operator<<(const std::nullptr_t & /*null*/) const {
-    if (cur_level_ <= level_) *this << "(null)";
+    //if (cur_level_ <= level_) *this << "(null)";
+    std::cout << "(null)";
     return *this;
   }
 
