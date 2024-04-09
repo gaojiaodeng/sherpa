@@ -638,7 +638,7 @@ class StreamingServer(object):
             ssl_context = None
             logging.info("No certificate provided")
 
-        threading.Timer(5.0, self.timely_func).start()
+        # threading.Timer(5.0, self.timely_func).start()
 
         async with websockets.serve(
             self.handle_connection,
@@ -720,6 +720,7 @@ class StreamingServer(object):
             while self.recognizer.is_ready(stream):
                 await self.compute_and_decode(stream)
                 result = self.recognizer.get_result(stream)
+                print(f"segment:{result.segment} text : {result.text}")
                 if last_result is not None:
                     if result.segment > last_result.segment and len(last_result.text) > 0:
                         last_punc_str = ""
@@ -740,9 +741,9 @@ class StreamingServer(object):
                         await socket.send(json.dumps(message))
 
                 last_result = result
+                msg_str = ""
                 if len(result.text) > 0:
                     text_str = result.text.lower()
-                    msg_str = ""
                     if len(result.tokens) % 12 == 0:
                         punc_result = self.funasr_model.generate(input=text_str)
                         #print(punc_result)
@@ -752,18 +753,18 @@ class StreamingServer(object):
                     else:
                         msg_str = last_punc_str + text_str[last_punc_size:]
 
-                    message = {
-                        "method": self.decoding_method,
-                        "segment": result.segment,
-                        "text": msg_str,
-                        "tokens": result.tokens,
-                        "timestamps": format_timestamps(result.timestamps),
-                        "is_final": result.is_final,
-                    }
-                    print(message)
-                    logging.info(f"message: {message}.")
+                message = {
+                    "method": self.decoding_method,
+                    "segment": result.segment,
+                    "text": msg_str,
+                    "tokens": result.tokens,
+                    "timestamps": format_timestamps(result.timestamps),
+                    "is_final": result.is_final,
+                }
+                print(message)
+                logging.info(f"message: {message}.")
 
-                    await socket.send(json.dumps(message))
+                await socket.send(json.dumps(message))
 
         tail_padding = torch.rand(
             int(self.sample_rate * self.tail_padding_length), dtype=torch.float32
