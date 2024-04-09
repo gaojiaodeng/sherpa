@@ -102,7 +102,7 @@ import sherpa
 
 from funasr import AutoModel
 
-from sherpa.bin.report_host import from_json_to_base64, get_host_info, send_host_report
+import report_host
 
 
 def add_model_args(parser: argparse.ArgumentParser):
@@ -470,8 +470,8 @@ class StreamingServer(object):
         max_active_connections: int,
         doc_root: str,
         tail_padding_length: float,
-        certificate: Optional[str] = None,
         port: int,
+        certificate: Optional[str] = None,
     ):
         """
         Args:
@@ -621,10 +621,10 @@ class StreamingServer(object):
 
         json_str = json.dumps(data)
         print(f"json_str:{json_str}")
-        data_base64 = from_json_to_base64(json_str, "iMuSfa346s3JLJXjH1DSyQ==")
-        host_info = get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections)
+        data_base64 = report_host.from_json_to_base64(json_str, "iMuSfa346s3JLJXjH1DSyQ==")
+        host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections)
         print(f"host_info:{host_info}")
-        send_host_report(data_base64, host_info)
+        report_host.send_host_report(data_base64, host_info)
         threading.Timer(5.0, self.timely_func).start()
 
     async def run(self, port: int):

@@ -1,6 +1,5 @@
 import sys
 import os
-import datetime
 
 import base64
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
