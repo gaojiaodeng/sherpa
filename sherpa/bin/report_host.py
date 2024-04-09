@@ -32,14 +32,14 @@ def from_json_to_base64(json_str, key_base64):
 
 
 def get_cpu_usage():
-    return psutil.cpu_percent(interval=1)
+    return psutil.cpu_percent()
 
 
 def get_memory_info():
     mem = psutil.virtual_memory()
-    total_mem_gb = mem.total / (1024.0 ** 3)
-    available_mem_gb = mem.available / (1024.0 ** 3)
-    used_mem_gb = mem.used / (1024.0 ** 3)
+    total_mem_gb = round(mem.total / (1024.0 ** 3), 1)
+    available_mem_gb = round(mem.available / (1024.0 ** 3), 1)
+    used_mem_gb = round(mem.used / (1024.0 ** 3), 1)
     return total_mem_gb, available_mem_gb, used_mem_gb
 
 
@@ -54,6 +54,7 @@ def get_public_ip():
 
 
 def get_host_info(now, sample_rate, language, port, session_count, session_limit):
+    physical_cores = psutil.cpu_count(logical=False)
     cpu_usage = get_cpu_usage()
     pub_ip = get_public_ip()
     total_mem, available_mem, used_mem = get_memory_info()
@@ -61,7 +62,7 @@ def get_host_info(now, sample_rate, language, port, session_count, session_limit
     formatted_time = now.strftime('%Y/%m/%d-%H:%M:%S')
 
     data = {
-        "cpuCount": 48,
+        "cpuCount": physical_cores,
         "cpuUsage": cpu_usage,
         "ipOut": pub_ip,
         "memLeftG": available_mem,
