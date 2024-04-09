@@ -81,6 +81,7 @@ python3 ./sherpa/bin/streaming_client.py \
 
 import argparse
 import asyncio
+import datetime
 import http
 import json
 import logging
@@ -100,6 +101,8 @@ import websockets
 import sherpa
 
 from funasr import AutoModel
+
+from sherpa.bin.report_host import from_json_to_base64, get_host_info, send_host_report
 
 
 def add_model_args(parser: argparse.ArgumentParser):
@@ -468,6 +471,7 @@ class StreamingServer(object):
         doc_root: str,
         tail_padding_length: float,
         certificate: Optional[str] = None,
+        port: int,
     ):
         """
         Args:
@@ -525,6 +529,7 @@ class StreamingServer(object):
         )
         self.decoding_method = recognizer.config.decoding_method
         self.tail_padding_length = tail_padding_length
+        self.port = port
 
     async def stream_consumer_task(self):
         """This function extracts streams from the queue, batches them up, sends
@@ -607,7 +612,19 @@ class StreamingServer(object):
         return status, header, response
 
     def timely_func(self):
-        print(f"call timely_func! current_active_connections : {self.current_active_connections}")
+        now = datetime.datetime.now()
+        timestamp = now.timestamp()
+        millis = int(round(timestamp * 1000))
+        data = {
+            'timeMillis': millis
+        }
+
+        json_str = json.dumps(data)
+        print(f"json_str:{json_str}")
+        data_base64 = from_json_to_base64(json_str, "iMuSfa346s3JLJXjH1DSyQ==")
+        host_info = get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections)
+        print(f"host_info:{host_info}")
+        send_host_report(data_base64, host_info)
         threading.Timer(5.0, self.timely_func).start()
 
     async def run(self, port: int):
@@ -893,7 +910,8 @@ def main():
         max_active_connections=max_active_connections,
         certificate=certificate,
         doc_root=doc_root,
-        tail_padding_length=tail_padding_length
+        tail_padding_length=tail_padding_length,
+        port=port
     )
     asyncio.run(server.run(port))
 
