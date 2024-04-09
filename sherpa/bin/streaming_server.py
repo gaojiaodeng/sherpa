@@ -87,6 +87,7 @@ import logging
 import socket
 import ssl
 import sys
+import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -605,6 +606,10 @@ class StreamingServer(object):
 
         return status, header, response
 
+    def timely_func(self):
+        print(f"call timely_func! current_active_connections : {self.current_active_connections}")
+        threading.Timer(5.0, self.timely_func).start()
+
     async def run(self, port: int):
         task = asyncio.create_task(self.stream_consumer_task())
 
@@ -615,6 +620,8 @@ class StreamingServer(object):
         else:
             ssl_context = None
             logging.info("No certificate provided")
+
+        threading.Timer(5.0, self.timely_func).start()
 
         async with websockets.serve(
             self.handle_connection,
@@ -711,7 +718,7 @@ class StreamingServer(object):
                             "timestamps": format_timestamps(last_result.timestamps),
                             "is_final": last_result.is_final,
                         }
-                        # print(message)
+                        print(message)
                         logging.info(f"message: {message}.")
                         await socket.send(json.dumps(message))
 
@@ -719,7 +726,7 @@ class StreamingServer(object):
                 if len(result.text) > 0:
                     text_str = result.text.lower()
                     msg_str = ""
-                    if len(result.tokens) % 6 == 0:
+                    if len(result.tokens) % 12 == 0:
                         punc_result = self.funasr_model.generate(input=text_str)
                         #print(punc_result)
                         last_punc_str = punc_result[0]["text"]
@@ -736,7 +743,7 @@ class StreamingServer(object):
                         "timestamps": format_timestamps(result.timestamps),
                         "is_final": result.is_final,
                     }
-                    #print(message)
+                    print(message)
                     logging.info(f"message: {message}.")
 
                     await socket.send(json.dumps(message))
