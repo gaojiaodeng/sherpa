@@ -900,6 +900,7 @@ def main():
     certificate = args.certificate
     doc_root = args.doc_root
     tail_padding_length = args.tail_padding_length
+    public_ip = args.public_ip
 
     if certificate and not Path(certificate).is_file():
         raise ValueError(f"{certificate} does not exist")
@@ -919,7 +920,8 @@ def main():
         certificate=certificate,
         doc_root=doc_root,
         tail_padding_length=tail_padding_length,
-        port=port
+        port=port,
+        public_ip=public_ip
     )
     asyncio.run(server.run(port))
 
