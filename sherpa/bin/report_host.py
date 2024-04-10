@@ -92,7 +92,7 @@ def send_host_report(data_base64, host_info):
     }
 
     response = requests.post(url, headers=headers, json=host_info)
-    if response.status_code != 200:
+    if response.status_code == 200:
         logging.info(f"request success!: {response.json()}")
     else:
         logging.info(f"request fail! code：{response.status_code}, text:{response.text}")
