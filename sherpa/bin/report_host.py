@@ -54,10 +54,11 @@ def get_public_ip():
         return None
 
 
-def get_host_info(now, sample_rate, language, port, session_count, session_limit):
+def get_host_info(now, sample_rate, language, port, session_count, session_limit, public_ip):
     physical_cores = psutil.cpu_count(logical=False)
     cpu_usage = get_cpu_usage()
-    pub_ip = get_public_ip()
+    if public_ip is None:
+        public_ip = get_public_ip()
     total_mem, available_mem, used_mem = get_memory_info()
     pid = os.getpid()
     formatted_time = now.strftime('%Y/%m/%d-%H:%M:%S')
@@ -65,7 +66,7 @@ def get_host_info(now, sample_rate, language, port, session_count, session_limit
     data = {
         "cpuCount": physical_cores,
         "cpuUsage": cpu_usage,
-        "ipOut": pub_ip,
+        "ipOut": public_ip,
         "memLeftG": available_mem,
         "memTotalG": total_mem,
         "memUsedG": used_mem,

@@ -164,6 +164,12 @@ def add_model_args(parser: argparse.ArgumentParser):
         help="Whether the model to be used is trained with bbpe",
     )
 
+    parser.add_argument(
+        "--public-ip",
+        type=str,
+        help="public ip for outside connection",
+    )
+
 
 def add_decoding_args(parser: argparse.ArgumentParser):
     parser.add_argument(
@@ -472,6 +478,7 @@ class StreamingServer(object):
         tail_padding_length: float,
         port: int,
         certificate: Optional[str] = None,
+        public_ip = None,
     ):
         """
         Args:
@@ -530,6 +537,7 @@ class StreamingServer(object):
         self.decoding_method = recognizer.config.decoding_method
         self.tail_padding_length = tail_padding_length
         self.port = port
+        self.public_ip = public_ip
 
     async def stream_consumer_task(self):
         """This function extracts streams from the queue, batches them up, sends
@@ -622,7 +630,7 @@ class StreamingServer(object):
         json_str = json.dumps(data)
         # print(f"json_str:{json_str}")
         data_base64 = report_host.from_json_to_base64(json_str, "iMuSfa346s3JLJXjH1DSyQ==")
-        host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections)
+        host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections, self.public_ip)
         # print(f"host_info:{host_info}")
         report_host.send_host_report(data_base64, host_info)
         threading.Timer(5.0, self.timely_func).start()
