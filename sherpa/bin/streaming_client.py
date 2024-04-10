@@ -65,7 +65,7 @@ async def receive_results(socket: websockets.WebSocketServerProtocol):
 
         method = result["method"]
         segment = result["segment"]
-        is_final = result["final"]
+        is_final = result["is_final"]
         text = result["text"]
         tokens = result["tokens"]
         timestamps = result["timestamps"]
@@ -80,11 +80,16 @@ async def receive_results(socket: websockets.WebSocketServerProtocol):
                     timestamps=timestamps,
                 )
             )
+            print(f"Final result of segment {segment}: {text}")
             logging.info(f"Final result of segment {segment}: {text}")
             continue
 
         last_10_words = text.split()[-10:]
         last_10_words = " ".join(last_10_words)
+        print(
+            f"Partial result of segment {segment} (last 10 words): "
+            f"{last_10_words}"
+        )
         logging.info(
             f"Partial result of segment {segment} (last 10 words): "
             f"{last_10_words}"

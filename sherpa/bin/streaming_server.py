@@ -784,7 +784,7 @@ class StreamingServer(object):
             "text": result.text,
             "tokens": result.tokens,
             "timestamps": format_timestamps(result.timestamps),
-            "final": True,  # end of connection, always set final to True
+            "is_final": True,  # end of connection, always set final to True
         }
 
         await socket.send(json.dumps(message))
