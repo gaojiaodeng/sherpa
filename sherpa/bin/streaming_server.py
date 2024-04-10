@@ -170,6 +170,12 @@ def add_model_args(parser: argparse.ArgumentParser):
         help="public ip for outside connection",
     )
 
+    parser.add_argument(
+        "--public-port",
+        type=str,
+        help="public port for outside connection",
+    )
+
 
 def add_decoding_args(parser: argparse.ArgumentParser):
     parser.add_argument(
@@ -479,6 +485,7 @@ class StreamingServer(object):
         port: int,
         certificate: Optional[str] = None,
         public_ip = None,
+        public_port = None,
     ):
         """
         Args:
@@ -538,6 +545,7 @@ class StreamingServer(object):
         self.tail_padding_length = tail_padding_length
         self.port = port
         self.public_ip = public_ip
+        self.public_port = public_port
 
     async def stream_consumer_task(self):
         """This function extracts streams from the queue, batches them up, sends
@@ -630,7 +638,10 @@ class StreamingServer(object):
         json_str = json.dumps(data)
         # print(f"json_str:{json_str}")
         data_base64 = report_host.from_json_to_base64(json_str, "iMuSfa346s3JLJXjH1DSyQ==")
-        host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections, self.public_ip)
+        port = self.port
+        if self.public_port is not None:
+            port = self.public_port
+        host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", port, self.current_active_connections, self.max_active_connections, self.public_ip)
         # print(f"host_info:{host_info}")
         report_host.send_host_report(data_base64, host_info)
         threading.Timer(5.0, self.timely_func).start()
@@ -901,6 +912,7 @@ def main():
     doc_root = args.doc_root
     tail_padding_length = args.tail_padding_length
     public_ip = args.public_ip
+    public_port = args.public_port
 
     if certificate and not Path(certificate).is_file():
         raise ValueError(f"{certificate} does not exist")
@@ -921,7 +933,8 @@ def main():
         doc_root=doc_root,
         tail_padding_length=tail_padding_length,
         port=port,
-        public_ip=public_ip
+        public_ip=public_ip,
+        public_port=public_port
     )
     asyncio.run(server.run(port))
 
