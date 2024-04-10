@@ -620,10 +620,10 @@ class StreamingServer(object):
         }
 
         json_str = json.dumps(data)
-        print(f"json_str:{json_str}")
+        # print(f"json_str:{json_str}")
         data_base64 = report_host.from_json_to_base64(json_str, "iMuSfa346s3JLJXjH1DSyQ==")
         host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", self.port, self.current_active_connections, self.max_active_connections)
-        print(f"host_info:{host_info}")
+        # print(f"host_info:{host_info}")
         report_host.send_host_report(data_base64, host_info)
         threading.Timer(5.0, self.timely_func).start()
 
@@ -638,7 +638,7 @@ class StreamingServer(object):
             ssl_context = None
             logging.info("No certificate provided")
 
-        # threading.Timer(5.0, self.timely_func).start()
+        threading.Timer(5.0, self.timely_func).start()
 
         async with websockets.serve(
             self.handle_connection,
@@ -720,7 +720,6 @@ class StreamingServer(object):
             while self.recognizer.is_ready(stream):
                 await self.compute_and_decode(stream)
                 result = self.recognizer.get_result(stream)
-                print(f"segment:{result.segment} text : {result.text}")
                 if last_result is not None:
                     if result.segment > last_result.segment and len(last_result.text) > 0:
                         last_punc_str = ""
