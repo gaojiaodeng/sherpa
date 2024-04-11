@@ -40,8 +40,9 @@ def get_memory_info():
     mem = psutil.virtual_memory()
     total_mem_gb = round(mem.total / (1024.0 ** 3), 1)
     available_mem_gb = round(mem.available / (1024.0 ** 3), 1)
-    used_mem_gb = round(mem.used / (1024.0 ** 3), 1)
-    return total_mem_gb, available_mem_gb, used_mem_gb
+    process = psutil.Process()
+    process_mem = round(process.memory_info().rss / (2 ** 30), 1)
+    return total_mem_gb, available_mem_gb, process_mem
 
 
 def get_public_ip():
@@ -59,7 +60,7 @@ def get_host_info(now, sample_rate, language, port, session_count, session_limit
     cpu_usage = get_cpu_usage()
     if public_ip is None:
         public_ip = get_public_ip()
-    total_mem, available_mem, used_mem = get_memory_info()
+    total_mem, available_mem, process_used_mem = get_memory_info()
     pid = os.getpid()
     formatted_time = now.strftime('%Y/%m/%d-%H:%M:%S')
 
@@ -69,7 +70,7 @@ def get_host_info(now, sample_rate, language, port, session_count, session_limit
         "ipOut": public_ip,
         "memLeftG": available_mem,
         "memTotalG": total_mem,
-        "memUsedG": used_mem,
+        "memUsedG": process_used_mem,
         "modelSource": "SELF_BUILT",
         "modelType": "ASR",
         "paramMap": {"sample_rate": sample_rate, "lang": language},
