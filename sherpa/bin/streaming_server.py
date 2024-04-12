@@ -415,7 +415,7 @@ def get_args():
 def create_funasr_model() -> AutoModel:
     model = AutoModel(model="ct-punc")
     res = model.generate(input="那今天的会就到这里吧 happy new year 明年见")
-    print(res)
+    print(res, flush=True)
     return model
 
 def create_recognizer(args) -> sherpa.OnlineRecognizer:
@@ -642,7 +642,7 @@ class StreamingServer(object):
         if self.public_port is not None:
             port = self.public_port
         host_info = report_host.get_host_info(now, str(self.sample_rate), "en_zh", port, self.current_active_connections, self.max_active_connections, self.public_ip)
-        # print(f"host_info:{host_info}")
+        print(f"report:{host_info}", flush=True)
         report_host.send_host_report(data_base64, host_info)
         threading.Timer(5.0, self.timely_func).start()
 
@@ -754,7 +754,7 @@ class StreamingServer(object):
                             "timestamps": format_timestamps(last_result.timestamps),
                             "is_final": last_result.is_final,
                         }
-                        print(message)
+                        print(message, flush=True)
                         logging.info(f"message: {message}.")
                         await socket.send(json.dumps(message))
 
@@ -779,7 +779,7 @@ class StreamingServer(object):
                     "timestamps": format_timestamps(result.timestamps),
                     "is_final": result.is_final,
                 }
-                print(message)
+                print(message, flush=True)
                 logging.info(f"message: {message}.")
 
                 await socket.send(json.dumps(message))
